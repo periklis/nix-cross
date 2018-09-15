@@ -1,34 +1,26 @@
 let
-  pkgs = import ../nixpkgs {};
+  pkgs = import ../../ptsirakidis/nix-config/nixpkgs {};
 
   crossSystem = rec {
     config = "x86_64-linux-gnu";
     arch = "x86_64";
-    withTLS = true;
-    libc = "glibc";
+    # withTLS = true;
+    # libc = "glibc";
     platform = (with pkgs.lib.systems.platforms; pc64 // { kernelMajor = "2.6"; });
-    openssl.system = "linux-generic64";
+  #   openssl.system = "linux-generic64";
   };
 
-  crossPkgs = import ../nixpkgs {
+  crossPkgs = import ../../ptsirakidis/nix-config/nixpkgs {
     inherit crossSystem;
-
-    overlays = [(self: super: {
-      glibc = super.glibc.override {
-        withLinuxHeaders = false;
-      };
-
-      hello = super.hello.override {
-        stdenv = super.gccStdenv;
-      };
-    })];
   };
-
-  /*
-    | Package | Build         | Host          | Target       |
-    | Stdenv  | x86_64-darwin | x86_64-darwin | x86_64-linux |
-    | hello   | x86_64-darwin | x86_64-linux  | x86_64-linux |
-  */
-
 in
-crossPkgs.hello
+pkgs.dockerTools.buildImage{
+ name = "nixos-cross-hello";
+ tag  = "latest";
+
+ contents = crossPkgs.hello;
+
+ config = {
+ Cmd = [ "./bin/hello" ];
+ };
+}
